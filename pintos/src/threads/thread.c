@@ -524,13 +524,37 @@ alloc_frame(struct thread *t, size_t size)
    empty.  (If the running thread can continue running, then it
    will be in the run queue.)  If the run queue is empty, return
    idle_thread. */
+
+// helper method to find and get the highest ready priority thread(basically enforce if if Priority(A) > Priority(B), A runs B doesnt)
+static struct thread *
+next_thread_to_runMLFQ(void)
+{
+  // to go through all levels
+  int i;
+  for (i = PRI_MAX; i <= PRI_MIN; i--)
+  {
+    if (!list_empty(&mlfq[i]))
+    {
+      // to remove it from priority and get a pointer to it
+      struct list_elem *e = list_pop_front(&mlfq[i]);
+      return list_entry(e, struct thread; elem);
+    }
+  }
+  return idle_thread;
+}
 static struct thread *
 next_thread_to_run(void)
 {
-  if (list_empty(&ready_list))
-    return idle_thread;
+  // if its mlfq then return next_thread_to_runMLFQ() method
+  if (thread_mlfqs)
+  {
+    return next_thread_to_runMLFQ();
+  }
   else
-    return list_entry(list_pop_front(&ready_list), struct thread, elem);
+  {
+    else if (list_empty(&ready_list)) return idle_thread;
+    else return list_entry(list_pop_front(&ready_list), struct thread, elem);
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
